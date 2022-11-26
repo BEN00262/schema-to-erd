@@ -210,7 +210,7 @@ async function ask_config_questions() {
         {
             type: 'number',
             name: 'database_port',
-            message: 'Enter the database user',
+            message: 'Enter the database port',
             when: (answers) => !answers.load_from_env_file
         }
     ]);
@@ -240,7 +240,7 @@ async function generate_uml_diagrams() {
     progress.setHeader('Generating database table schemas')
 
     if (Object.keys(answers).length) {
-            progress.start();
+            progress.start(); 
 
             const generated_plantuml_schemas = await generate_db_graph(
                 answers?.load_from_env_file ? map_env_keys_to_compatible_object() : answers
@@ -248,7 +248,7 @@ async function generate_uml_diagrams() {
 
             progress.stop();
 
-            const generated_plantuml_url = `http://www.plantuml.com/plantuml/img/${plantumlEncoder.encode(generated_plantuml_schemas)}`;
+            const generated_plantuml_url = `http://www.plantuml.com/plantuml/svg/${plantumlEncoder.encode(generated_plantuml_schemas)}`;
 
             consola.info(`Opening the generated schema in your browser at ${generated_plantuml_url}`);
             open(generated_plantuml_url)
@@ -269,7 +269,7 @@ function open_plantuml_schema_diagram(file_path) {
         path.isAbsolute(file_path) ? file_path :
         path.join(CURRENT_EXECUTION_DIRECTORY, file_path), 'utf-8');
 
-    const generated_plantuml_url = `http://www.plantuml.com/plantuml/img/${plantumlEncoder.encode(generated_plantuml_schemas)}`;
+    const generated_plantuml_url = `http://www.plantuml.com/plantuml/svg/${plantumlEncoder.encode(generated_plantuml_schemas)}`;
 
     consola.info(`Opening the generated schema in your browser at ${generated_plantuml_url}`);
     open(generated_plantuml_url)

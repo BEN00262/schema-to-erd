@@ -1,6 +1,6 @@
 {
   "name": "happy-ste",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A tool to automatically generate ERDs from your relational database",
   "main": "index.js",
   "bin": {
