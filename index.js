@@ -202,7 +202,9 @@ async function ask_config_questions() {
             type: 'list',
             name: 'database_dialect',
             message: 'Select the database dialect',
-            choices: ['postgres', 'mysql', 'mssql', 'sequelite'],
+            // https://sequelize.org/docs/v6/getting-started/
+            /* one of 'mysql' | 'postgres' | 'sqlite' | 'mariadb' | 'mssql' | 'db2' | 'snowflake' | 'oracle' */
+            choices: ['postgres', 'mysql', 'mssql', 'sqlite', 'mariadb', 'db2', 'snowflake', 'oracle'],
             when: (answers) => !answers.load_from_env_file
         },
         {
@@ -263,7 +265,10 @@ async function generate_uml_diagrams() {
 
 function open_plantuml_schema_diagram(file_path) {
     // verify its a valid file then encode it and open it
-    const generated_plantuml_schemas = fs.readFileSync(path.join(CURRENT_EXECUTION_DIRECTORY, file_path), 'utf-8');
+    const generated_plantuml_schemas = fs.readFileSync(
+        path.isAbsolute(file_path) ? file_path :
+        path.join(CURRENT_EXECUTION_DIRECTORY, file_path), 'utf-8');
+
     const generated_plantuml_url = `http://www.plantuml.com/plantuml/img/${plantumlEncoder.encode(generated_plantuml_schemas)}`;
 
     consola.info(`Opening the generated schema in your browser at ${generated_plantuml_url}`);
