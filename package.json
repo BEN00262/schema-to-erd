@@ -1,0 +1,37 @@
+{
+  "name": "schema-to-erd",
+  "version": "0.0.1",
+  "description": "A tool to automatically generate ERDs from your relational database",
+  "main": "index.js",
+  "bin": {
+    "schema-to-erd": "./bin/index.js"
+  },
+  "scripts": {
+    "updateLink": "npm rm schema-to-erd --location=local && npm link --location=local"
+  },
+  "keywords": [
+    "erd",
+    "schema",
+    "database",
+    "sequelize"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/BEN00262/schema-to-erd.git"
+  },
+  "author": "john kerama <johnnesta2018@gmail.com>",
+  "license": "ISC",
+  "dependencies": {
+    "cli-infinity-progress": "^0.6.7",
+    "consola": "^2.15.3",
+    "dotenv": "^16.0.3",
+    "inquirer": "^8.2.5",
+    "nanoid": "^3.3.4",
+    "open": "^8.4.0",
+    "pg": "^8.8.0",
+    "pg-hstore": "^2.3.4",
+    "plantuml-encoder": "^1.4.0",
+    "sequelize": "^6.25.8",
+    "sequelize-auto": "^0.8.8"
+  }
+}
