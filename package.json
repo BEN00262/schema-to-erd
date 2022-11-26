@@ -1,13 +1,13 @@
 {
-  "name": "schema-to-erd",
+  "name": "happy-ste",
   "version": "0.0.1",
   "description": "A tool to automatically generate ERDs from your relational database",
   "main": "index.js",
   "bin": {
-    "schema-to-erd": "./bin/index.js"
+    "happy-ste": "./bin/index.js"
   },
   "scripts": {
-    "updateLink": "npm rm schema-to-erd --location=local && npm link --location=local"
+    "updateLink": "npm rm happy-ste --location=local && npm link --location=local"
   },
   "keywords": [
     "erd",
