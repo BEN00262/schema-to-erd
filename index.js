@@ -13,8 +13,10 @@ const { nanoid } = require('nanoid');
 const plantumlEncoder = require('plantuml-encoder');
 const open = require('open');
 
+const get_table_name = raw_table_name => raw_table_name?.split(".")[1]
+
 function generate_plantuml_reference(table_name) {
-    return table_name.toLowerCase().split(" ").join("_")
+    return table_name?.toLowerCase().split(" ").join("_")
 }
 
 // add checks for allowNull fields ( nullable fields )
@@ -43,8 +45,6 @@ const generate_db_graph = async ({database_name, database_user,
     let generated_d2_dsl = '';
 
     const tables = []; // nodes ( we want to create edges between them )
-    
-    const get_table_name = raw_table_name => raw_table_name.split(".")[1]
 
     const data = await auto.run()
 
@@ -95,8 +95,6 @@ const generate_db_graph = async ({database_name, database_user,
         })
     }
 
-    // console.log(data.relations)
-
     for (const relationship_edge of data.relations) {
         const parent_table_name = get_table_name(relationship_edge.parentTable)
         const child_table_name = get_table_name(relationship_edge.childTable)
@@ -131,7 +129,7 @@ const generate_db_graph = async ({database_name, database_user,
                         resolved_relation_symbol = '||..|{';
                         break;
                     case 'o2o':
-                        resolved_relation_symbol = '||..|{';
+                        resolved_relation_symbol = '||..||';
                         break;
                     case 'm2m':
                         resolved_relation_symbol = '}|..|{';
