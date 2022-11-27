@@ -74,6 +74,7 @@ const generate_db_graph = async ({database_name, database_user,
                 name: ts_name,
                 type: ts_value.type,
                 primaryKey: ts_value.primaryKey,
+                // add metadata on the required fields and stuff
                 autoIncrement: (() => {
                     let default_value = ts_value.defaultValue
                     if (default_value) {
