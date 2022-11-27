@@ -1,5 +1,5 @@
 ## <h1><b>Schema to ERD</b></h1>
-![alt text](./assets/logo.png)
+![alt text](./assets/logo.jpeg)
 Hi good people of the internet, am happy to announce to you one of my newest tool that will help in reducing the time required to onboard new backend developers to your teams especially if you don't have well documented ERDs for your databases. This tool also helps in removing the need to do manual updates to your existing ERDs ( which is tiring especially if you are working in an environment where these changes can be many within a short span of time ), just point the tool to your database and it should be able to generate a pictorial view of your current database ( including relationships and such ). 
 
 ## <b>Usage</b>
