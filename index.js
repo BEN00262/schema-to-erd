@@ -13,8 +13,10 @@ const { nanoid } = require('nanoid');
 const plantumlEncoder = require('plantuml-encoder');
 const open = require('open');
 
+const get_table_name = raw_table_name => raw_table_name?.split(".")[1]
+
 function generate_plantuml_reference(table_name) {
-    return table_name.toLowerCase().split(" ").join("_")
+    return table_name?.toLowerCase().split(" ").join("_")
 }
 
 // add checks for allowNull fields ( nullable fields )
@@ -30,138 +32,139 @@ const generate_db_graph = async ({database_name, database_user,
     database_password, database_host,
     database_dialect, database_port 
 }) => {
-    const auto = new SequelizeAuto(
-        database_name, database_user, database_password, {
-            host: database_host,
-            dialect: database_dialect,
-            port: database_port,
-            noWrite: true,
-            logging:false
-        }
-    );
-
-    let generated_d2_dsl = '';
-
-    const tables = []; // nodes ( we want to create edges between them )
-    
-    const get_table_name = raw_table_name => raw_table_name.split(".")[1]
-
-    const data = await auto.run()
-
-    for (let [table_name, table_structure] of Object.entries(data.tables)) {
-        if (table_name.toLowerCase() === 'public.sequelizemeta') {
-            continue // ignore this table its of no use to us
-        }
-
-        table_name = get_table_name(table_name)
-
-        fields = []
-        
-        for (const [ts_name, ts_value] of Object.entries(table_structure)) {
-            switch (ts_value.type) {
-                case 'TIMESTAMP WITH TIME ZONE':
-                    ts_value.type = 'DATE'
-                    break;
-                default:
-                    // check if the value matches CHARACTER VARYING(100) if so do the conversion
-                    if (/CHARACTER VARYING\(\d+\)/.test(ts_value.type)) {
-                        const value = ts_value.type.match(/\d+/)[0]
-                        ts_value.type = `VARCHAR(${+value})`
-                    }
+    try {
+        const auto = new SequelizeAuto(
+            database_name, database_user, database_password, {
+                host: database_host,
+                dialect: database_dialect,
+                port: database_port,
+                noWrite: true,
+                logging:false
             }
-
-            fields.push({
-                name: ts_name,
-                type: ts_value.type,
-                primaryKey: ts_value.primaryKey,
-                autoIncrement: (() => {
-                    let default_value = ts_value.defaultValue
-                    if (default_value) {
-                        if (default_value.toLowerCase().startsWith('nextval(')){
-                            return true
+        );
+    
+        let generated_d2_dsl = '';
+    
+        const tables = []; // nodes ( we want to create edges between them )
+    
+        const data = await auto.run()
+    
+        for (let [table_name, table_structure] of Object.entries(data.tables)) {
+            if (table_name.toLowerCase() === 'public.sequelizemeta') {
+                continue // ignore this table its of no use to us
+            }
+    
+            table_name = get_table_name(table_name)
+    
+            fields = []
+            
+            for (const [ts_name, ts_value] of Object.entries(table_structure)) {
+                switch (ts_value.type) {
+                    case 'TIMESTAMP WITH TIME ZONE':
+                        ts_value.type = 'DATE'
+                        break;
+                    default:
+                        // check if the value matches CHARACTER VARYING(100) if so do the conversion
+                        if (/CHARACTER VARYING\(\d+\)/.test(ts_value.type)) {
+                            const value = ts_value.type.match(/\d+/)[0]
+                            ts_value.type = `VARCHAR(${+value})`
                         }
-                    }
-
-                    return false
-                })()
+                }
+    
+                fields.push({
+                    name: ts_name,
+                    type: ts_value.type,
+                    primaryKey: ts_value.primaryKey,
+                    // add metadata on the required fields and stuff
+                    autoIncrement: (() => {
+                        let default_value = ts_value.defaultValue
+                        if (default_value) {
+                            if (default_value.toLowerCase().startsWith('nextval(')){
+                                return true
+                            }
+                        }
+    
+                        return false
+                    })()
+                })
+            }
+    
+            tables.push({
+                table: table_name,
+                fields: fields,
+                relations: []
             })
         }
-
-        tables.push({
-            table: table_name,
-            fields: fields,
-            relations: []
-        })
-    }
-
-    // console.log(data.relations)
-
-    for (const relationship_edge of data.relations) {
-        const parent_table_name = get_table_name(relationship_edge.parentTable)
-        const child_table_name = get_table_name(relationship_edge.childTable)
-        let relationship_type = 'o2m'
-
-        if (relationship_edge.isOne) {
-            relationship_type = 'o2o'
-        } else if (relationship_edge.isM2M) {
-            relationship_type = 'm2m'
-        }
-
-        // find the parent table
-        let child_table_index = tables.findIndex(table => table.table === child_table_name)
-        if (child_table_index > -1) {
-            // find the child table ( make sure the child table exists )
-            let parent_table_index = tables.findIndex(table => table.table === parent_table_name)
-
-            if (parent_table_index > -1) {
-                // add the relationship
-                let resolved_relation_symbol = '';
-
-                /*
-                    Type	    Symbol
-                    Zero or One	|o--
-                    Exactly One	||--
-                    Zero or Many	}o--
-                    One or Many	}|--
-                */
-
-                switch (relationship_type) {
-                    case 'o2m':
-                        resolved_relation_symbol = '||..|{';
-                        break;
-                    case 'o2o':
-                        resolved_relation_symbol = '||..|{';
-                        break;
-                    case 'm2m':
-                        resolved_relation_symbol = '}|..|{';
-                        break;
-                }
-
-                if (resolved_relation_symbol) {
-                    tables[child_table_index].relations.push(
-                        `${generate_plantuml_reference(parent_table_name)} ${resolved_relation_symbol} ${generate_plantuml_reference(tables[child_table_index].table)}`
-                    );
+    
+        for (const relationship_edge of data.relations) {
+            const parent_table_name = get_table_name(relationship_edge.parentTable)
+            const child_table_name = get_table_name(relationship_edge.childTable)
+            let relationship_type = 'o2m'
+    
+            if (relationship_edge.isOne) {
+                relationship_type = 'o2o'
+            } else if (relationship_edge.isM2M) {
+                relationship_type = 'm2m'
+            }
+    
+            // find the parent table
+            let child_table_index = tables.findIndex(table => table.table === child_table_name)
+            if (child_table_index > -1) {
+                // find the child table ( make sure the child table exists )
+                let parent_table_index = tables.findIndex(table => table.table === parent_table_name)
+    
+                if (parent_table_index > -1) {
+                    // add the relationship
+                    let resolved_relation_symbol = '';
+    
+                    /*
+                        Type	    Symbol
+                        Zero or One	|o--
+                        Exactly One	||--
+                        Zero or Many	}o--
+                        One or Many	}|--
+                    */
+    
+                    switch (relationship_type) {
+                        case 'o2m':
+                            resolved_relation_symbol = '||..|{';
+                            break;
+                        case 'o2o':
+                            resolved_relation_symbol = '||..||';
+                            break;
+                        case 'm2m':
+                            resolved_relation_symbol = '}|..|{';
+                            break;
+                    }
+    
+                    if (resolved_relation_symbol) {
+                        tables[child_table_index].relations.push(
+                            `${generate_plantuml_reference(parent_table_name)} ${resolved_relation_symbol} ${generate_plantuml_reference(tables[child_table_index].table)}`
+                        );
+                    }
                 }
             }
         }
+    
+        // go through the tables and create edges between them
+        const relationship_tree = [];
+    
+        for (const table of tables) {
+            generated_d2_dsl += `${generate_plantuml_dsl(table.table, table.fields)}\n\n`;
+            relationship_tree.push(table.relations);
+        }
+    
+        return `@startuml
+        ' hide the spot
+    hide circle
+    
+    ' avoid problems with angled crows feet
+    skinparam linetype ortho
+    
+        ${generated_d2_dsl}\n\n${relationship_tree.flat().filter(unit => unit).join("\n")}\n@enduml`;
+    } catch(error) {
+        throw error;
     }
-
-    // go through the tables and create edges between them
-    const relationship_tree = [];
-
-    for (const table of tables) {
-        generated_d2_dsl += `${generate_plantuml_dsl(table.table, table.fields)}\n\n`;
-        relationship_tree.push(table.relations);
-    }
-
-    return `@startuml
-    ' hide the spot
-hide circle
-
-' avoid problems with angled crows feet
-skinparam linetype ortho
-
-    ${generated_d2_dsl}\n\n${relationship_tree.flat().filter(unit => unit).join("\n")}\n@enduml`;
 }
 
 
@@ -239,7 +242,8 @@ async function generate_uml_diagrams() {
     const progress = new CLIInfinityProgress();
     progress.setHeader('Generating database table schemas')
 
-    if (Object.keys(answers).length) {
+    try {
+        if (Object.keys(answers).length) {
             progress.start(); 
 
             const generated_plantuml_schemas = await generate_db_graph(
@@ -258,8 +262,11 @@ async function generate_uml_diagrams() {
 
             consola.info(`Writing the generated schema into ${path_to_write_schema_to}`)
             fs.writeFileSync(path_to_write_schema_to, generated_plantuml_schemas);
-    } else {
+        } else {
             consola.error("Not enough arguments")
+        }
+    } catch (error) {
+        consola.error(error.message)
     }
 }
 
